@@ -12,8 +12,12 @@
 #define LIGHT_POSSITION_PIN A2
 #define GABARIT_POSSITION_PIN A3
 #define FOG_LIGHT_PIN 8
+#define HAZARD_LIGHT_PIN 7
 
 bool fingerFlag = false;
+bool hazardFlag = false;
+int setPeriod = 0;
+int directionPeriod = 750;
 
 #define NOT_USED 0
 
@@ -27,6 +31,8 @@ bool fingerFlag = false;
 #define LOW_GABARIT_BEAM_MAX_VAL 300
 #define LIGHT_AUTO_MIN_VAL 400
 #define LIGHT_AUTO_MAX_VAL 700
+
+Timer tmr;
 
 
 

@@ -24,7 +24,9 @@ ManetaAnalogic lowBeamPossition(LIGHT_POSSITION_PIN, LOW_GABARIT_BEAM_MIN_VAL, L
 ManetaAnalogic light(LIGHT_POSSITION_PIN, LIGHT_AUTO_MIN_VAL, LIGHT_AUTO_MAX_VAL, NOT_USED);
 ManetaAnalogic gabaritPossition(GABARIT_POSSITION_PIN, LOW_GABARIT_BEAM_MIN_VAL, LOW_GABARIT_BEAM_MAX_VAL, NOT_USED);
 ManetaAnalogic autoPossition(GABARIT_POSSITION_PIN, LIGHT_AUTO_MIN_VAL, LIGHT_AUTO_MAX_VAL, NOT_USED);
+
 ManetaDigital fogLightPossition(FOG_LIGHT_PIN);
+ManetaDigital hazardLightPossition(HAZARD_LIGHT_PIN);
 
 
 void menu();
@@ -56,14 +58,14 @@ void loop()
 
   while(!fingerFlag)
   {
-    int setPeriod = 200;
-    Timer tmr;
+    setPeriod = 200;
     tmr.setPeriod(setPeriod);
     if(tmr.ready())
       getFingerprintID();
     // Serial.println(fingerFlag);
   }
 
+  tmr.setPeriod(directionPeriod);
   iluminare();
 
 }
@@ -97,35 +99,47 @@ void hightoLowBeam()
   }
 }
 
-void leftCotireChecker()
+void indicareDirectie()
 {
-  if (leftPossition.hold() && !leftIndicator.getState())
+  if (rightPossition.maxPosition() && leftPossition.maxPosition() && !hazardFlag && (rightIndicator.getState() || leftIndicator.getState()))
   {
-    leftIndicator.toggle();
-    Serial.print(leftIndicator.getState());
-    Serial.println(" | Left Indicator");
+    if(tmr.ready())
+    {
+      rightIndicator.toggleoff();
+      leftIndicator.toggleoff();
+    }
   }
-  else if (leftIndicator.getState() && leftPossition.maxPosition())
+  else if (leftPossition.hold() && !leftIndicator.getState())
   {
-    leftIndicator.toggle();
-    Serial.print(leftIndicator.getState());
-    Serial.println(" | Left Indicator");
+    if(tmr.ready())
+    {
+      leftIndicator.toggleon();
+      Serial.print(leftIndicator.getState());
+      Serial.println(" | Left Indicator"); 
+    }
+    
   }
-}
-
-void rightCotireChecker()
-{
-  if (rightPossition.hold() && !rightIndicator.getState())
+  else if (rightPossition.hold() && !rightIndicator.getState())
   {
-    rightIndicator.toggle();
-    Serial.print(rightIndicator.getState());
-    Serial.println(" | Right Indicator");
+    if(tmr.ready())
+    {
+      rightIndicator.toggleon();
+      Serial.print(rightIndicator.getState());
+      Serial.println(" | Right Indicator");
+    }
   }
-  else if (rightIndicator.getState() && rightPossition.maxPosition())
+  else if (hazardLightPossition.hold() && rightPossition.maxPosition() && leftPossition.maxPosition() && hazardFlag)
   {
-    rightIndicator.toggle();
-    Serial.print(rightIndicator.getState());
-    Serial.println(" | Right Indicator");
+    hazardFlag = false;
+  }
+  else if( !hazardLightPossition.hold() && !rightIndicator.getState() && !leftIndicator.getState() && rightPossition.maxPosition() && leftPossition.maxPosition())
+  {
+    hazardFlag = true;
+    if(tmr.ready())
+    {
+      rightIndicator.toggleon();
+      leftIndicator.toggleon();
+    }
   }
 }
 
@@ -159,9 +173,10 @@ void fogPossitionChecker()
 
 void lightPossitionChecker()
 {
-  if (lowBeamPossition.hold() && !lowBeam.getState() && !highBeam.getState() && gabaritPossition.maxPosition())
+  if ((lowBeamPossition.hold() || autoPossition.hold()) && !lowBeam.getState() && !highBeam.getState())
   {
     lowBeam.toggle();
+    gabarit.toggleon();
     Serial.print(lowBeam.getState());
     Serial.println(" | Light on");
   }
@@ -183,8 +198,7 @@ void iluminare()
 {
   blinkInit();
   hightoLowBeam();
-  leftCotireChecker();
-  rightCotireChecker();
+  indicareDirectie();
   gabaritPossitionChecker();
   lightPossitionChecker();
   fogPossitionChecker();
