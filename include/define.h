@@ -13,6 +13,8 @@
 #define GABARIT_POSSITION_PIN A3
 #define FOG_LIGHT_PIN 8
 
+bool fingerFlag = false;
+
 #define NOT_USED 0
 
 #define HIGH_LOW_MIN_VAL 100

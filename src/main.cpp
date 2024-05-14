@@ -2,8 +2,12 @@
 #include "manetaDigitalSignals.h"
 #include "relay.h"
 #include "timer.h"
+#include "Adafruit_Fingerprint.h"
 
 #include "define.h"
+
+#define mySerial Serial1
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 Relay leftIndicator(LEFT_INDICATOR);
 Relay rightIndicator(RIGHT_INDICATOR);
@@ -25,16 +29,57 @@ ManetaDigital fogLightPossition(FOG_LIGHT_PIN);
 
 void menu();
 void iluminare();
+bool getFingerprintID();
 
 void setup() 
 {
   Serial.begin(INITIAL_DELAY);
+  finger.begin(57600);
+  if (finger.verifyPassword()) {
+    Serial.println("Found fingerprint sensor!");
+  } else {
+    Serial.println("Did not find fingerprint sensor :(");
+  }
+  finger.getTemplateCount();
+  if (finger.templateCount == 0) {
+    Serial.print("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
+  }
+  else {
+    Serial.println("Waiting for valid finger...");
+      Serial.print("Sensor contains "); Serial.print(finger.templateCount); Serial.println(" templates");
+  }
   menu();
 }
 
 void loop() 
 {
+
+  while(!fingerFlag)
+  {
+    int setPeriod = 200;
+    Timer tmr;
+    tmr.setPeriod(setPeriod);
+    if(tmr.ready())
+      getFingerprintID();
+    // Serial.println(fingerFlag);
+  }
+
   iluminare();
+
+}
+
+bool getFingerprintID() {
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK)  return fingerFlag=false;
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK)  return fingerFlag=false;
+
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK)  return fingerFlag=false;
+
+  // found a match!
+  return fingerFlag = true;
 }
 
 void blinkInit()
