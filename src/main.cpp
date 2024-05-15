@@ -1,13 +1,4 @@
-#include "manetaAnalogSignals.h"
-#include "manetaDigitalSignals.h"
-#include "relay.h"
-#include "timer.h"
-#include "Adafruit_Fingerprint.h"
-
 #include "define.h"
-
-#define mySerial Serial1
-Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 Relay leftIndicator(LEFT_INDICATOR);
 Relay rightIndicator(RIGHT_INDICATOR);
@@ -16,6 +7,7 @@ Relay highBeam(HIGH_BEAM);
 Relay fogLight(FOG_LIGHT);
 Relay brakeLight(BRAKE_LIGHT);
 Relay gabarit(GABARIT);
+Relay buzzer(BUZZER);
 
 ManetaAnalogic highToLowBeam(HIGH_LOW_BEAM_PIN, HIGH_LOW_MIN_VAL, HIGH_LOW_MAX_VAL, NOT_USED);
 ManetaAnalogic leftPossition(LEFT_RIGHT_PIN, LEFT_MIN_VAL, LEFT_MAX_VAL, NOT_USED);
@@ -27,15 +19,24 @@ ManetaAnalogic autoPossition(GABARIT_POSSITION_PIN, LIGHT_AUTO_MIN_VAL, LIGHT_AU
 
 ManetaDigital fogLightPossition(FOG_LIGHT_PIN);
 ManetaDigital hazardLightPossition(HAZARD_LIGHT_PIN);
-
+ManetaDigital lockButton(LOCK_BUTTON);
+ManetaDigital parkinngMode(BUTTON_PARCTRONIC);
 
 void menu();
 void iluminare();
 bool getFingerprintID();
+void sistemOff();
+void parkingFlag();
+void parkingFront();
+void parkingBack();
 
 void setup() 
 {
   Serial.begin(INITIAL_DELAY);
+  
+  tmrParkingMode.setPeriod(parkingModePeriod);
+  buzzer.toggleon();
+
   finger.begin(57600);
   if (finger.verifyPassword()) {
     Serial.println("Found fingerprint sensor!");
@@ -50,12 +51,13 @@ void setup()
     Serial.println("Waiting for valid finger...");
       Serial.print("Sensor contains "); Serial.print(finger.templateCount); Serial.println(" templates");
   }
+  tmrDirection.setPeriod(directionPeriod);
+  Serial.println("Acces granted");
   menu();
 }
 
 void loop() 
 {
-
   while(!fingerFlag)
   {
     setPeriod = 200;
@@ -65,12 +67,23 @@ void loop()
     // Serial.println(fingerFlag);
   }
 
-  tmr.setPeriod(directionPeriod);
+  if(tmr.ready())
+  {
+    if(lockButton.click())
+    {
+      fingerFlag = false;
+      sistemOff();
+      Serial.println("Acces denied");
+    }
+  }
+  parkingFlag();
+  parkingFront();
+  parkingBack();
   iluminare();
-
 }
 
-bool getFingerprintID() {
+bool getFingerprintID() 
+{
   uint8_t p = finger.getImage();
   if (p != FINGERPRINT_OK)  return fingerFlag=false;
 
@@ -103,7 +116,7 @@ void indicareDirectie()
 {
   if (rightPossition.maxPosition() && leftPossition.maxPosition() && !hazardFlag && (rightIndicator.getState() || leftIndicator.getState()))
   {
-    if(tmr.ready())
+    if(tmrDirection.ready())
     {
       rightIndicator.toggleoff();
       leftIndicator.toggleoff();
@@ -111,7 +124,7 @@ void indicareDirectie()
   }
   else if (leftPossition.hold() && !leftIndicator.getState())
   {
-    if(tmr.ready())
+    if(tmrDirection.ready())
     {
       leftIndicator.toggleon();
       Serial.print(leftIndicator.getState());
@@ -121,7 +134,7 @@ void indicareDirectie()
   }
   else if (rightPossition.hold() && !rightIndicator.getState())
   {
-    if(tmr.ready())
+    if(tmrDirection.ready())
     {
       rightIndicator.toggleon();
       Serial.print(rightIndicator.getState());
@@ -130,13 +143,17 @@ void indicareDirectie()
   }
   else if (hazardLightPossition.hold() && rightPossition.maxPosition() && leftPossition.maxPosition() && hazardFlag)
   {
-    hazardFlag = false;
+    if(tmrDirection.ready())
+    {
+      hazardFlag = false;
+    }
+    
   }
   else if( !hazardLightPossition.hold() && !rightIndicator.getState() && !leftIndicator.getState() && rightPossition.maxPosition() && leftPossition.maxPosition())
   {
-    hazardFlag = true;
-    if(tmr.ready())
+    if(tmrDirection.ready())
     {
+      hazardFlag = true;
       rightIndicator.toggleon();
       leftIndicator.toggleon();
     }
@@ -194,6 +211,18 @@ void offPositionChecker()
   }
 }
 
+void sistemOff()
+{
+  rightIndicator.toggleoff();
+  leftIndicator.toggleoff();
+  lowBeam.toggleoff();
+  highBeam.toggleoff();
+  fogLight.toggleoff();
+  brakeLight.toggleoff();
+  gabarit.toggleoff();
+
+}
+
 void iluminare()
 {
   blinkInit();
@@ -204,6 +233,49 @@ void iluminare()
   fogPossitionChecker();
   offPositionChecker();
 }
+
+//Parctronic
+//Sunetul distanta*10 si asta o sa fie timerul pentru sunet
+void parkingFlag()
+{
+  if(parkinngMode.click())
+  {
+    parkingModeFlag = !parkingModeFlag;
+    buzzer.toggleon();
+  }
+}
+void buzzerBip()
+{
+  buzzer.toggle(); 
+  setPeriod = 100;
+  if(tmr.ready())
+  {
+    buzzer.toggle();  
+  }
+}
+void parkingFront()
+{
+  if(parkingModeFlag && tmrParkingMode.ready())
+  {
+        tmrBuzzer.setPeriod(round(((parctronic.dist(0)+parctronic.dist(1))/2)*10));
+        if(tmrBuzzer.ready())
+        {
+          buzzerBip();
+        }
+      }
+}
+void parkingBack()
+{
+  if(parkingModeFlag && tmrParkingMode.ready())
+  {
+        tmrBuzzer.setPeriod(round(((parctronic.dist(2)+parctronic.dist(3))/2)*10));
+        if(tmrBuzzer.ready())
+        {
+          buzzerBip();
+        }
+      }
+}
+//Final
 
 void menu()
 {

@@ -1,4 +1,15 @@
 #pragma once
+
+#include "manetaAnalogSignals.h"
+#include "manetaDigitalSignals.h"
+#include "relay.h"
+#include "timer.h"
+#include "Adafruit_Fingerprint.h"
+#include "HCSR04.h"
+
+#define mySerial Serial1
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
+
 #define RIGHT_INDICATOR 31
 #define LEFT_INDICATOR 33
 #define LOW_BEAM 35
@@ -13,9 +24,26 @@
 #define GABARIT_POSSITION_PIN A3
 #define FOG_LIGHT_PIN 8
 #define HAZARD_LIGHT_PIN 7
+#define LOCK_BUTTON 9
+//Parctronic
+#define BUTTON_PARCTRONIC 4
+#define TRIGER_PARCTRONIC 3
+#define PARCTRONIC_SENSORS 4
+#define ECHO_PARCTRONIC1 10
+#define ECHO_PARCTRONIC2 11
+#define ECHO_PARCTRONIC3 12
+#define ECHO_PARCTRONIC4 13
+#define BUZZER 5
 
+bool parkingModeFlag = false;
+Timer tmrParkingMode, tmrBuzzer;
+int parkingModePeriod = 100;
+
+HCSR04 parctronic(TRIGER_PARCTRONIC, new int[PARCTRONIC_SENSORS]{ECHO_PARCTRONIC1, ECHO_PARCTRONIC2, ECHO_PARCTRONIC3, ECHO_PARCTRONIC4}, PARCTRONIC_SENSORS);
+//Final
 bool fingerFlag = false;
 bool hazardFlag = false;
+bool sistemStartFlag = false;
 int setPeriod = 0;
 int directionPeriod = 750;
 
@@ -32,16 +60,22 @@ int directionPeriod = 750;
 #define LIGHT_AUTO_MIN_VAL 400
 #define LIGHT_AUTO_MAX_VAL 700
 
-Timer tmr;
+Timer tmr, tmrDirection;
 
 
+//Negru - GND
+//ROSU - A2
+//Galben - 8
+//Alb - A3
+//MijlocPavarotnic - GND
+//SusPavarotnic - A0
+//JosPavarotnic - A1
+//StopButton - 9
+//HazardButton - 7
 
-// alb-galben protivatumanc
-// alb-sur gabarit
-// alb-rosu blijnii
-// albastru portacaliu surinchis potemtiometru pentru iluminare salon
-// povarotnik si blijnii dalnii folosesc 2 pinuri analogice
-
-
-// 250 gabarit
-// 500 automat???
+//ButtonParctronic - 4
+//TrigerParctronic - 3
+//EchoParctronic1 - 10
+//EchoParctronic2 - 11
+//EchoParctronic3 - 12
+//EchoParctronic4 - 13

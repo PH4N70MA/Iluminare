@@ -19,6 +19,11 @@ class ManetaDigital {
       return (tmr.getPeriod());
     }
 
+    bool getState()
+    {
+      return digitalRead(_pin);
+    }
+
     bool click() 
     {
       bool pinVal = digitalRead(_pin);
