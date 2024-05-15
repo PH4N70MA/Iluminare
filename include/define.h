@@ -6,6 +6,9 @@
 #include "timer.h"
 #include "Adafruit_Fingerprint.h"
 #include "HCSR04.h"
+#include "SPI.h"
+#include "MFRC522.h"
+#include "EEPROM.h"
 
 #define mySerial Serial1
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
@@ -40,6 +43,12 @@ Timer tmrParkingMode, tmrBuzzer;
 int parkingModePeriod = 100;
 
 HCSR04 parctronic(TRIGER_PARCTRONIC, new int[PARCTRONIC_SENSORS]{ECHO_PARCTRONIC1, ECHO_PARCTRONIC2, ECHO_PARCTRONIC3, ECHO_PARCTRONIC4}, PARCTRONIC_SENSORS);
+//Final
+//RFID
+#define RST_PIN 5
+#define SS_PIN 53  
+
+MFRC522 rfidscanner(SS_PIN, RST_PIN); 
 //Final
 bool fingerFlag = false;
 bool hazardFlag = false;

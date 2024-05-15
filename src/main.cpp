@@ -29,11 +29,18 @@ void sistemOff();
 void parkingFlag();
 void parkingFront();
 void parkingBack();
+bool rfidCheck();
 
 void setup() 
 {
   Serial.begin(INITIAL_DELAY);
-  
+  menu();
+
+  //RFID
+  SPI.begin(); 
+  rfidscanner.PCD_Init();
+  Serial.println("Approximate your card to the reader or finger to the sensor");
+  //Final 
   tmrParkingMode.setPeriod(parkingModePeriod);
   buzzer.toggleon();
 
@@ -52,19 +59,20 @@ void setup()
       Serial.print("Sensor contains "); Serial.print(finger.templateCount); Serial.println(" templates");
   }
   tmrDirection.setPeriod(directionPeriod);
-  Serial.println("Acces granted");
-  menu();
 }
 
 void loop() 
 {
   while(!fingerFlag)
   {
+    //FingerPrint
     setPeriod = 200;
     tmr.setPeriod(setPeriod);
     if(tmr.ready())
       getFingerprintID();
-    // Serial.println(fingerFlag);
+    if(tmr.ready())
+      rfidCheck();
+    //Final
   }
 
   if(tmr.ready())
@@ -95,6 +103,7 @@ bool getFingerprintID()
 
   // found a match!
   return fingerFlag = true;
+  Serial.println("Acces granted");
 }
 
 void blinkInit()
@@ -276,6 +285,47 @@ void parkingBack()
       }
 }
 //Final
+
+//RFID
+bool rfidCheck()
+{
+    // Look for new cards
+  if ( ! rfidscanner.PICC_IsNewCardPresent()) 
+  {
+    return;
+  }
+  // Select one of the cards
+  if ( ! rfidscanner.PICC_ReadCardSerial()) 
+  {
+    return;
+  }
+  //Show UID on serial monitor
+  Serial.print("UID tag :");
+  String content= "";
+  byte letter;
+  for (byte i = 0; i < rfidscanner.uid.size; i++) 
+  {
+     Serial.print(rfidscanner.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     Serial.print(rfidscanner.uid.uidByte[i], HEX);
+     content.concat(String(rfidscanner.uid.uidByte[i] < 0x10 ? " 0" : " "));
+     content.concat(String(rfidscanner.uid.uidByte[i], HEX));
+  }
+  Serial.println();
+  Serial.print("Message : ");
+  content.toUpperCase();
+  if (content.substring(1) == "FA BD 7E 82") //change here the UID of the card/cards that you want to give access
+  {
+    Serial.println("Authorized access");
+    Serial.println();
+    return fingerFlag = true;
+  }
+ 
+ else   {
+    Serial.println(" Access denied");
+    return fingerFlag = false;
+  }
+}
+//FINAL
 
 void menu()
 {
