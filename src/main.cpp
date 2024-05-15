@@ -29,7 +29,7 @@ void sistemOff();
 void parkingFlag();
 void parkingFront();
 void parkingBack();
-bool rfidCheck();
+void rfidCheck();
 
 void setup() 
 {
@@ -287,7 +287,7 @@ void parkingBack()
 //Final
 
 //RFID
-bool rfidCheck()
+void rfidCheck()
 {
     // Look for new cards
   if ( ! rfidscanner.PICC_IsNewCardPresent()) 
@@ -302,7 +302,6 @@ bool rfidCheck()
   //Show UID on serial monitor
   Serial.print("UID tag :");
   String content= "";
-  byte letter;
   for (byte i = 0; i < rfidscanner.uid.size; i++) 
   {
      Serial.print(rfidscanner.uid.uidByte[i] < 0x10 ? " 0" : " ");
@@ -317,12 +316,12 @@ bool rfidCheck()
   {
     Serial.println("Authorized access");
     Serial.println();
-    return fingerFlag = true;
+     fingerFlag = true;
   }
  
  else   {
     Serial.println(" Access denied");
-    return fingerFlag = false;
+     fingerFlag = false;
   }
 }
 //FINAL
