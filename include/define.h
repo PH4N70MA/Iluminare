@@ -9,6 +9,7 @@
 #include "SPI.h"
 #include "MFRC522.h"
 #include "EEPROM.h"
+#include "LiquidCrystal_I2C.h"
 
 #define mySerial Serial1
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
@@ -50,6 +51,16 @@ HCSR04 parctronic(TRIGER_PARCTRONIC, new int[PARCTRONIC_SENSORS]{ECHO_PARCTRONIC
 
 MFRC522 rfidscanner(SS_PIN, RST_PIN); 
 //Final
+
+#define DISPLAY_ADDRESS 0x27
+#define DISPLAY_COLUMNS 20
+#define DISPLAY_ROWS 4
+#define DISPLAY_PERIOD 2000
+
+Timer tmrDisplay;
+
+LiquidCrystal_I2C lcd(DISPLAY_ADDRESS, DISPLAY_COLUMNS, DISPLAY_ROWS);
+
 bool fingerFlag = false;
 bool hazardFlag = false;
 bool sistemStartFlag = false;
@@ -70,6 +81,8 @@ int directionPeriod = 750;
 #define LIGHT_AUTO_MAX_VAL 700
 
 Timer tmr, tmrDirection;
+
+
 
 
 //Negru - GND

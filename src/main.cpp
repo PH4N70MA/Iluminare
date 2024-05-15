@@ -30,11 +30,23 @@ void parkingFlag();
 void parkingFront();
 void parkingBack();
 void rfidCheck();
+void autorisationNeeded();
+void accesGranted();
+void accesDenied();
+void display();
 
 void setup() 
 {
   Serial.begin(INITIAL_DELAY);
   menu();
+
+  tmrDisplay.setPeriod(DISPLAY_PERIOD);
+  lcd.init();
+  lcd.backlight();
+  autorisationNeeded();
+
+
+
 
   //RFID
   SPI.begin(); 
@@ -65,14 +77,17 @@ void loop()
 {
   while(!fingerFlag)
   {
-    //FingerPrint
+    if(tmrDisplay.ready())
+    {
+      autorisationNeeded();
+    }
     setPeriod = 200;
     tmr.setPeriod(setPeriod);
     if(tmr.ready())
+    {
       getFingerprintID();
-    if(tmr.ready())
       rfidCheck();
-    //Final
+    }
   }
 
   if(tmr.ready())
@@ -82,7 +97,13 @@ void loop()
       fingerFlag = false;
       sistemOff();
       Serial.println("Acces denied");
+      accesDenied();
     }
+  }
+  tmrDisplay.setPeriod(1000);
+  if(tmrDisplay.ready())
+  {
+    display();
   }
   parkingFlag();
   parkingFront();
@@ -93,17 +114,27 @@ void loop()
 bool getFingerprintID() 
 {
   uint8_t p = finger.getImage();
-  if (p != FINGERPRINT_OK)  return fingerFlag=false;
+  if (p != FINGERPRINT_OK)
+  {
+    return fingerFlag=false;
+  }  
 
   p = finger.image2Tz();
-  if (p != FINGERPRINT_OK)  return fingerFlag=false;
+  if (p != FINGERPRINT_OK)
+  {
+    return fingerFlag=false;
+  }  
 
   p = finger.fingerFastSearch();
-  if (p != FINGERPRINT_OK)  return fingerFlag=false;
+  if (p != FINGERPRINT_OK)
+  {
+    accesDenied();
+    return fingerFlag=false;
+  }  
 
   // found a match!
+  accesGranted();
   return fingerFlag = true;
-  Serial.println("Acces granted");
 }
 
 void blinkInit()
@@ -312,19 +343,133 @@ void rfidCheck()
   Serial.println();
   Serial.print("Message : ");
   content.toUpperCase();
-  if (content.substring(1) == "FA BD 7E 82") //change here the UID of the card/cards that you want to give access
+  if (content.substring(1) == "A3 81 D5 20") //change here the UID of the card/cards that you want to give access
   {
     Serial.println("Authorized access");
     Serial.println();
-     fingerFlag = true;
+    accesGranted();
+    fingerFlag = true;
   }
  
  else   {
     Serial.println(" Access denied");
-     fingerFlag = false;
+    accesDenied();
+    fingerFlag = false;
   }
 }
 //FINAL
+
+//Display
+
+void autorisationNeeded()
+{
+  lcd.setCursor(0, 0);
+  lcd.clear();
+  lcd.print("Authorisation needed");
+  lcd.blink();
+}
+
+void accesGranted()
+{
+  lcd.setCursor(0, 0);
+  lcd.clear();
+  lcd.print("Authorisation needed");
+  lcd.print("Acces granted");
+  lcd.blink();
+}
+
+void accesDenied()
+{
+  lcd.setCursor(0, 0);
+  lcd.clear();
+  lcd.print("Authorisation needed");
+  lcd.print("Acces denied");
+  lcd.blink();
+}
+
+void display()
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.noBlink();
+  if (rightIndicator.getState() && leftIndicator.getState())
+  {
+    lcd.print("Avareica: ");
+    lcd.write(127);
+    lcd.print(" ");
+    lcd.write(126);
+  }
+  else if (rightIndicator.getState())
+  {
+    lcd.print("Directie: ");
+    lcd.write(126);
+  }
+  else if (leftIndicator.getState())
+  {
+    lcd.print("Directie: ");
+    lcd.write(127);
+  }
+  else
+  {
+  lcd.print("Directie: ");
+  lcd.print("0");
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.print("Lumina: ");
+  if (!lowBeam.getState() && !highBeam.getState() && gabarit.getState())
+  {
+    lcd.print("Side");
+  }
+  else if (!lowBeam.getState() && highBeam.getState() && gabarit.getState())
+  {
+    lcd.print("High");
+  }
+  else if (lowBeam.getState() && !highBeam.getState() && gabarit.getState())
+  {
+    lcd.print("Low");
+  }
+  else
+  {
+    lcd.print("Off");
+  }
+
+  lcd.setCursor(13, 1);
+  lcd.print("FOG:");
+  if (fogLight.getState())
+  {
+    lcd.print("On");
+  }
+  else
+  {
+    lcd.print("Off");
+  }
+
+  lcd.setCursor(14, 0);
+  lcd.print("P: ");
+  if (parkingModeFlag)
+  {
+    lcd.print("1");
+  }
+  else
+  {
+    lcd.print("0");
+  }
+  
+  if (parkingModeFlag)
+  {
+    lcd.setCursor(0, 2);
+    lcd.print("F: ");
+    lcd.print((parctronic.dist(0) + parctronic.dist(1))/2);
+    lcd.print(" cm");
+    lcd.setCursor(0, 3);
+    lcd.print("B: ");
+    lcd.print((parctronic.dist(2) + parctronic.dist(3))/2);
+    lcd.print(" cm");
+  }
+  
+}
+//Final
 
 void menu()
 {
