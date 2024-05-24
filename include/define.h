@@ -29,6 +29,7 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 #define FOG_LIGHT_PIN 8
 #define HAZARD_LIGHT_PIN 7
 #define LOCK_BUTTON 9
+#define BRAKE_PIN 2
 //Parctronic
 #define BUTTON_PARCTRONIC 4
 #define TRIGER_PARCTRONIC 3

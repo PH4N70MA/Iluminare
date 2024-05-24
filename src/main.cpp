@@ -21,6 +21,7 @@ ManetaDigital fogLightPossition(FOG_LIGHT_PIN);
 ManetaDigital hazardLightPossition(HAZARD_LIGHT_PIN);
 ManetaDigital lockButton(LOCK_BUTTON);
 ManetaDigital parkinngMode(BUTTON_PARCTRONIC);
+ManetaDigital brakeButton(BRAKE_PIN);
 
 void menu();
 void iluminare();
@@ -212,6 +213,18 @@ void gabaritPossitionChecker()
   }
 }
 
+void brakePosition()
+{
+  if(brakeButton.hold())
+  {
+    brakeLight.toggleon();
+  }
+  else if (!brakeButton.hold())
+  {
+    brakeLight.toggleoff();
+  }
+}
+
 void fogPossitionChecker()
 {
   if (fogLightPossition.hold() && !fogLight.getState())
@@ -265,6 +278,7 @@ void sistemOff()
 
 void iluminare()
 {
+  brakePosition();
   blinkInit();
   hightoLowBeam();
   indicareDirectie();
