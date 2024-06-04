@@ -21,6 +21,7 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 #define FOG_LIGHT 39
 #define BRAKE_LIGHT 41
 #define GABARIT 43
+#define HAZARD 45
 #define INITIAL_DELAY 9600
 #define HIGH_LOW_BEAM_PIN A0
 #define LEFT_RIGHT_PIN A1
@@ -31,16 +32,19 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 #define LOCK_BUTTON 9
 #define BRAKE_PIN 2
 //Parctronic
-#define BUTTON_PARCTRONIC 4
+#define BUTTON_PARCTRONIC_F 4
+#define BUTTON_PARCTRONIC_B 22
+
 #define TRIGER_PARCTRONIC 3
 #define PARCTRONIC_SENSORS 4
 #define ECHO_PARCTRONIC1 10
 #define ECHO_PARCTRONIC2 11
 #define ECHO_PARCTRONIC3 12
 #define ECHO_PARCTRONIC4 13
-#define BUZZER 5
+#define BUZZER 6                
 
-bool parkingModeFlag = false;
+bool parkingFModeFlag = false;
+bool parkingBModeFlag = false;
 Timer tmrParkingMode, tmrBuzzer;
 int parkingModePeriod = 100;
 
@@ -66,7 +70,6 @@ bool fingerFlag = false;
 bool hazardFlag = false;
 bool sistemStartFlag = false;
 int setPeriod = 0;
-int directionPeriod = 750;
 
 #define NOT_USED 0
 
@@ -81,10 +84,49 @@ int directionPeriod = 750;
 #define LIGHT_AUTO_MIN_VAL 400
 #define LIGHT_AUTO_MAX_VAL 700
 
-Timer tmr, tmrDirection;
+Timer tmr;
 
 
+Relay leftIndicator(LEFT_INDICATOR);
+Relay rightIndicator(RIGHT_INDICATOR);
+Relay lowBeam(LOW_BEAM);
+Relay highBeam(HIGH_BEAM);
+Relay fogLight(FOG_LIGHT);
+Relay brakeLight(BRAKE_LIGHT);
+Relay gabarit(GABARIT);
+Relay buzzer(BUZZER);
+Relay hazardBeam(HAZARD);
 
+ManetaAnalogic highToLowBeam(HIGH_LOW_BEAM_PIN, HIGH_LOW_MIN_VAL, HIGH_LOW_MAX_VAL, NOT_USED);
+ManetaAnalogic leftPossition(LEFT_RIGHT_PIN, LEFT_MIN_VAL, LEFT_MAX_VAL, NOT_USED);
+ManetaAnalogic rightPossition(LEFT_RIGHT_PIN, RIGHT_MIN_VAL, RIGHT_MAX_VAL, NOT_USED);
+ManetaAnalogic lowBeamPossition(LIGHT_POSSITION_PIN, LOW_GABARIT_BEAM_MIN_VAL, LOW_GABARIT_BEAM_MAX_VAL, NOT_USED);
+ManetaAnalogic light(LIGHT_POSSITION_PIN, LIGHT_AUTO_MIN_VAL, LIGHT_AUTO_MAX_VAL, NOT_USED);
+ManetaAnalogic gabaritPossition(GABARIT_POSSITION_PIN, LOW_GABARIT_BEAM_MIN_VAL, LOW_GABARIT_BEAM_MAX_VAL, NOT_USED);
+ManetaAnalogic autoPossition(GABARIT_POSSITION_PIN, LIGHT_AUTO_MIN_VAL, LIGHT_AUTO_MAX_VAL, NOT_USED);
+
+ManetaDigital fogLightPossition(FOG_LIGHT_PIN);
+ManetaDigital hazardLightPossition(HAZARD_LIGHT_PIN);
+ManetaDigital lockButton(LOCK_BUTTON);
+ManetaDigital parkinngModeF(BUTTON_PARCTRONIC_F);
+ManetaDigital parkinngModeB(BUTTON_PARCTRONIC_B);
+ManetaDigital brakeButton(BRAKE_PIN);
+
+void display();
+void rfidCheck();
+void autorisationNeeded();
+void accesGranted();
+void accesDenied();
+void menu();
+void iluminare();
+bool getFingerprintID();
+void sistemOff();
+void parkingFlag();
+void parkingFront();
+void hazard();
+void blinkInit();
+
+// void parkingBack();
 
 //Negru - GND
 //ROSU - A2
